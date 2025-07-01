@@ -1,5 +1,6 @@
 import os
 from typing import List
+import pdfplumber
 
 
 class TextFileLoader:
@@ -11,25 +12,40 @@ class TextFileLoader:
     def load(self):
         if os.path.isdir(self.path):
             self.load_directory()
-        elif os.path.isfile(self.path) and self.path.endswith(".txt"):
+        elif os.path.isfile(self.path) and (self.path.endswith(".txt") or self.path.endswith(".pdf")):
             self.load_file()
         else:
             raise ValueError(
-                "Provided path is neither a valid directory nor a .txt file."
+                "Provided path is neither a valid directory nor a .txt/.pdf file."
             )
 
     def load_file(self):
-        with open(self.path, "r", encoding=self.encoding) as f:
-            self.documents.append(f.read())
+        if self.path.endswith(".txt"):
+            with open(self.path, "r", encoding=self.encoding) as f:
+                self.documents.append(f.read())
+        elif self.path.endswith(".pdf"):
+            self.documents.append(self.extract_text_from_pdf(self.path))
+        else:
+            raise ValueError("Unsupported file type: {}".format(self.path))
 
     def load_directory(self):
         for root, _, files in os.walk(self.path):
             for file in files:
+                file_path = os.path.join(root, file)
                 if file.endswith(".txt"):
-                    with open(
-                        os.path.join(root, file), "r", encoding=self.encoding
-                    ) as f:
+                    with open(file_path, "r", encoding=self.encoding) as f:
                         self.documents.append(f.read())
+                elif file.endswith(".pdf"):
+                    self.documents.append(self.extract_text_from_pdf(file_path))
+
+    def extract_text_from_pdf(self, pdf_path: str) -> str:
+        text = ""
+        with pdfplumber.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+        return text
 
     def load_documents(self):
         self.load()
