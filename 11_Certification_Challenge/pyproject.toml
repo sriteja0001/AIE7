@@ -1,0 +1,22 @@
+[project]
+name = "certification-challenge"
+version = "0.1.0"
+description = "AI Certification Challenge"
+requires-python = ">=3.9" 
+dependencies = [
+    "arxiv>=2.2.0",
+    "biopython>=1.85",
+    "ipython>=8.18.1",
+    "jupyter>=1.1.1",
+    "langchain-community>=0.3.27",
+    "langchain-core>=0.3.72",
+    "langchain-openai>=0.3.27",
+    "langchain-tavily>=0.2.11",
+    "langgraph>=0.5.1",
+    "langsmith>=0.4.4",
+    "nest-asyncio>=1.6.0",
+    "pymupdf>=1.26.3",
+    "qdrant-client>=1.15.0",
+    "tavily-python>=0.7.9",
+    "tiktoken>=0.9.0",
+]
