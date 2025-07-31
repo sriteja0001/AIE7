@@ -28,15 +28,19 @@ from langgraph.graph import StateGraph, END
 
 from langchain_core.messages import HumanMessage
 
+# API Keys - Set these via environment variables or comment out to use getpass
+# os.environ["OPENAI_API_KEY"] = getpass.getpass("OpenAI API Key:")
+# os.environ["TAVILY_API_KEY"] = getpass.getpass("TAVILY_API_KEY")
+# os.environ["LANGCHAIN_API_KEY"] = getpass.getpass("LangSmith API Key: ")
 
-os.environ["OPENAI_API_KEY"] = getpass.getpass("OpenAI API Key:")
-
-os.environ["TAVILY_API_KEY"] = getpass.getpass("TAVILY_API_KEY")
+# For server mode, these should be set via environment variables
+# You can set them in your terminal before running:
+# export OPENAI_API_KEY="your-key-here"
+# export TAVILY_API_KEY="your-key-here" 
+# export LANGCHAIN_API_KEY="your-key-here"
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = f"AIE7 - LangGraph - Certification Challenge - {uuid4().hex[0:8]}"
-os.environ["LANGCHAIN_API_KEY"] = getpass.getpass("LangSmith API Key: ")
-
 
 # Load and process documents
 directory_loader = DirectoryLoader("data", glob="**/*.pdf", loader_cls=PyMuPDFLoader)
@@ -219,12 +223,9 @@ tool_belt = [
     rag_search,
 ]
 
-
-
 model = ChatOpenAI(model="gpt-4.1-nano", temperature=0)
 
 model = model.bind_tools(tool_belt)
-
 
 class AgentState(TypedDict):
   messages: Annotated[list, add_messages]
@@ -233,7 +234,6 @@ def call_model(state):
   messages = state["messages"]
   response = model.invoke(messages)
   return {"messages" : [response]}
-
 
 uncompiled_graph = StateGraph(AgentState)
 
@@ -259,7 +259,6 @@ uncompiled_graph.add_edge("action", "agent")
 
 simple_agent_graph = uncompiled_graph.compile()
 
-
 def convert_inputs(input_object):
   return {"messages" : [HumanMessage(content=input_object["question"])]}
 
@@ -267,26 +266,3 @@ def parse_output(input_state):
   return input_state["messages"][-1].content
 
 agent_chain_with_formatting = convert_inputs | simple_agent_graph | parse_output
-
-# Test the agent chain with different types of queries
-print("Testing agent chain with different tools:")
-
-# Test RAG tool
-print("\n1. Testing RAG tool (student health database) PLUS medical research tool")
-result1 = agent_chain_with_formatting.invoke({"question": "What are the best nutrition tips for students? Also, find me proven evidence that sleep is good for academic performance in a few sentences."})
-print(result1)
-
-# Test Tavily tool
-print("\n2. Testing Tavily tool (web search):")
-result2 = agent_chain_with_formatting.invoke({"question": "What is the latest research about stress management for college students?"})
-print(result2)
-
-# Test Arxiv tool
-print("\n3. Testing Arxiv tool (research papers):")
-result3 = agent_chain_with_formatting.invoke({"question": "Find recent papers about exercise and mental health in students"})
-print(result3)
-
-# Test Medical Research tool
-print("\n4. Testing Medical Research tool (PubMed):")
-result4 = agent_chain_with_formatting.invoke({"question": "Find medical research about anxiety treatment for college students"})
-print(result4)
