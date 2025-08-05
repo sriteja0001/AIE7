@@ -8,6 +8,11 @@ This project consists of two main components:
 1. **`app.py`** - A multi-tool AI agent that intelligently selects the best information source
 2. **`evaluation_rag.ipynb`** - A Jupyter notebook for evaluating different RAG (Retrieval-Augmented Generation) approaches
 
+## Documentation
+
+- **`aie7-cert-challenge-writeup.pdf`** - Complete project writeup and documentation
+- **`loom-link.txt`** - Video demonstration link
+
 ## Features
 
 ### Multi-Source Information Retrieval
@@ -29,6 +34,10 @@ The AI agent automatically determines which information source is most appropria
 11_Certification_Challenge/
 ├── app.py                          # Main AI assistant application
 ├── evaluation_rag.ipynb            # RAG evaluation notebook
+├── aie7-cert-challenge-writeup.pdf # Complete project documentation
+├── loom-link.txt                   # Video demonstration link
+├── server.py                       # Flask server for API endpoints
+├── run_app.sh                      # Application startup script
 ├── data/                           # Student health PDF documents
 │   ├── Accessible-online-version-Manage-Stress-Workbook-PennState-final-2i5sewu.pdf
 │   ├── CollegeStudentMentalHealthActionToolkit.pdf
@@ -38,8 +47,20 @@ The AI agent automatically determines which information source is most appropria
 │   ├── Sleep-LetsCU.pdf
 │   └── Workouts for College Students.pdf
 ├── frontend/                       # Next.js web interface
-├── server.py                       # Flask server for API endpoints
-└── pyproject.toml                 # Python dependencies
+│   ├── src/
+│   │   └── app/
+│   │       ├── api/
+│   │       │   └── chat/
+│   │       │       └── route.ts    # API endpoint for chat
+│   │       ├── layout.tsx          # Root layout
+│   │       ├── page.tsx            # Main page component
+│   │       └── globals.css         # Global styles
+│   ├── public/                     # Static assets
+│   ├── package.json               # Dependencies
+│   ├── next.config.ts             # Next.js configuration
+│   └── tsconfig.json             # TypeScript configuration
+├── pyproject.toml                 # Python dependencies
+└── uv.lock                       # Dependency lock file
 ```
 
 ## Detailed Component Analysis
@@ -60,7 +81,7 @@ The AI agent automatically determines which information source is most appropria
 
 **3. RAG Model**
 - Custom prompt template for health-specific responses
-- Uses GPT-4o-mini for response generation
+- Uses GPT-4.1-nano for response generation
 - Context-aware answers based on retrieved documents
 
 **4. Tool Definitions**
@@ -71,6 +92,7 @@ The AI agent automatically determines which information source is most appropria
 
 **5. LangGraph Workflow**
 - Multi-agent system that intelligently routes queries
+- Uses GPT-4o-mini for reasoning and response generation
 - Determines when to use tools vs. provide direct answers
 - Handles conversation state and tool execution
 
@@ -156,7 +178,12 @@ python app.py
 python server.py
 ```
 
-**Option 3: Jupyter notebook evaluation**
+**Option 3: Using the startup script**
+```bash
+./run_app.sh
+```
+
+**Option 4: Jupyter notebook evaluation**
 ```bash
 jupyter notebook evaluation_rag.ipynb
 ```
@@ -170,12 +197,6 @@ jupyter notebook evaluation_rag.ipynb
 - "What exercises can I do in my dorm room?"
 - "How much sleep do college students need?"
 
-### Tool Selection Logic:
-- **Nutrition/exercise advice** → Local database + Web search
-- **Stress management** → Local database + Medical research
-- **Sleep optimization** → Local database + Academic research
-- **Current health trends** → Web search
-- **Medical conditions** → PubMed research
 
 ## Technical Architecture
 
