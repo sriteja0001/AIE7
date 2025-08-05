@@ -203,7 +203,7 @@ export default function Home() {
                   Welcome to your Student Health Advisor!
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Ask me anything about nutrition, stress, sleep, exercise, or mental health.
+                  Ask me anything about student wellness. I want you to be your best self!
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-md mx-auto">
                   <div className="bg-blue-50 rounded-lg p-3 text-sm">
@@ -277,7 +277,7 @@ export default function Home() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about nutrition, stress, sleep, exercise, or mental health..."
+                placeholder="Ask me anything about student health, wellness, or lifestyle..."
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                 disabled={isLoading}
               />

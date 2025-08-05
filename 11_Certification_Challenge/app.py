@@ -1,7 +1,27 @@
+"""
+Student Health AI Assistant
+
+This application provides a comprehensive AI assistant for student health and wellness queries.
+It combines multiple knowledge sources including a local health database, web search, 
+research papers, and medical literature to provide evidence-based health advice.
+
+Key Features:
+- RAG-based local health knowledge search
+- Web search for current health information
+- Academic research paper search
+- Medical literature search via PubMed
+- Multi-tool agent that intelligently selects the best information source
+
+Usage:
+- Set API keys as environment variables (OPENAI_API_KEY, TAVILY_API_KEY, LANGCHAIN_API_KEY)
+- Run the application to get health advice for students
+"""
+
 import os
 import getpass
 from uuid import uuid4
-# RAG Setup
+
+# RAG Setup - Document processing and vector storage
 from langchain_community.document_loaders import DirectoryLoader, PyMuPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import tiktoken
@@ -12,27 +32,22 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.tools import tool
 
+# External search tools
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.tools.arxiv.tool import ArxivQueryRun
 from Bio import Entrez
 
+# LangGraph imports for agent workflow
 from langchain_openai import ChatOpenAI
-
 from typing import TypedDict, Annotated
 from langgraph.graph.message import add_messages
 import operator
 from langchain_core.messages import BaseMessage
 from langgraph.prebuilt import ToolNode
-
 from langgraph.graph import StateGraph, END
-
 from langchain_core.messages import HumanMessage
 
-# API Keys - Set these via environment variables or comment out to use getpass
-# os.environ["OPENAI_API_KEY"] = getpass.getpass("OpenAI API Key:")
-# os.environ["TAVILY_API_KEY"] = getpass.getpass("TAVILY_API_KEY")
-# os.environ["LANGCHAIN_API_KEY"] = getpass.getpass("LangSmith API Key: ")
-
+# API Keys Configuration
 # For server mode, these should be set via environment variables
 # You can set them in your terminal before running:
 # export OPENAI_API_KEY="your-key-here"
@@ -42,11 +57,12 @@ from langchain_core.messages import HumanMessage
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = f"AIE7 - LangGraph - Certification Challenge - {uuid4().hex[0:8]}"
 
-# Load and process documents
+# Document Processing
 directory_loader = DirectoryLoader("data", glob="**/*.pdf", loader_cls=PyMuPDFLoader)
 student_health_resources = directory_loader.load()
 
 def tiktoken_len(text):
+    """Calculate token length for text splitting optimization"""
     tokens = tiktoken.encoding_for_model("gpt-4o").encode(text)
     return len(tokens)
 
@@ -58,16 +74,16 @@ text_splitter = RecursiveCharacterTextSplitter(
 
 student_health_chunks = text_splitter.split_documents(student_health_resources)
 
-# Setup vectorstore
+# Vector Store Setup
 embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
 qdrant_vectorstore = Qdrant.from_documents(
     documents=student_health_chunks,
     embedding=embedding_model,
-    location=":memory:"
+    location=":memory:"  # In-memory storage for this demo
 )
 qdrant_retriever = qdrant_vectorstore.as_retriever()
 
-# RAG prompt and model
+# RAG Model Setup
 HUMAN_TEMPLATE = """
 #CONTEXT:
 {context}
@@ -76,8 +92,19 @@ QUERY:
 {query}
 
 Use the provided context to answer the user query about student health, wellness, nutrition, stress management, 
-sleep, exercise, mental health, or any student success topics. Only use the provided context to answer the query. 
-If you do not know the answer, or it's not contained in the provided context respond with "I don't know"
+sleep, exercise, mental health, or any student success topics. 
+
+IMPORTANT: You have access to multiple information sources. When answering:
+1. First check the local health database for relevant information
+2. Then intelligently choose the best additional sources based on the query:
+   - For current trends, news, or recent developments → use web search
+   - For academic studies, research findings, or scholarly information → use academic research papers
+   - For medical conditions, clinical studies, or healthcare guidance → use medical literature
+   - You can use multiple sources if the query benefits from both current information AND research evidence
+3. Synthesize information from multiple sources to provide comprehensive, well-rounded answers
+
+Combine insights from different sources when possible to give the most helpful and accurate response. 
+If you cannot find relevant information from any available sources, respond with "I don't have enough information to answer this question accurately."
 """
 
 chat_prompt = ChatPromptTemplate.from_messages([
@@ -86,7 +113,7 @@ chat_prompt = ChatPromptTemplate.from_messages([
 
 rag_model = ChatOpenAI(model="gpt-4.1-nano")
 
-# RAG Tool
+# Tool Definitions
 @tool
 def rag_search(query: str) -> str:
     """
@@ -107,7 +134,6 @@ def rag_search(query: str) -> str:
     
     return response
 
-# Web Search Tool
 @tool
 def web_search(query: str) -> str:
     """
@@ -123,7 +149,6 @@ def web_search(query: str) -> str:
     tavily_tool = TavilySearchResults(max_results=5)
     return tavily_tool.invoke(query)
 
-# Research Papers Tool
 @tool
 def research_papers(query: str) -> str:
     """
@@ -139,7 +164,6 @@ def research_papers(query: str) -> str:
     arxiv_tool = ArxivQueryRun()
     return arxiv_tool.invoke(query)
 
-# Medical Research Tool
 @tool
 def medical_research(query: str) -> str:
     """
@@ -214,8 +238,7 @@ def medical_research(query: str) -> str:
     except Exception as e:
         return f"Error searching PubMed: {str(e)}"
 
-## tool belt
-
+# Agent Setup
 tool_belt = [
     web_search,
     research_papers,
@@ -223,18 +246,19 @@ tool_belt = [
     rag_search,
 ]
 
-model = ChatOpenAI(model="gpt-4.1-nano", temperature=0)
-
+model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 model = model.bind_tools(tool_belt)
 
 class AgentState(TypedDict):
-  messages: Annotated[list, add_messages]
+    messages: Annotated[list, add_messages]
 
 def call_model(state):
-  messages = state["messages"]
-  response = model.invoke(messages)
-  return {"messages" : [response]}
+    """Process user messages and generate responses"""
+    messages = state["messages"]
+    response = model.invoke(messages)
+    return {"messages": [response]}
 
+# LangGraph Workflow
 uncompiled_graph = StateGraph(AgentState)
 
 uncompiled_graph.add_node("agent", call_model)
@@ -243,12 +267,13 @@ uncompiled_graph.add_node("action", ToolNode(tool_belt))
 uncompiled_graph.set_entry_point("agent")
 
 def should_continue(state):
-  last_message = state["messages"][-1]
+    """Determine whether to continue processing or end the workflow"""
+    last_message = state["messages"][-1]
 
-  if last_message.tool_calls:
-    return "action"
+    if last_message.tool_calls:
+        return "action"  # Continue to tool execution
 
-  return END
+    return END  # End the workflow
 
 uncompiled_graph.add_conditional_edges(
     "agent",
@@ -259,10 +284,13 @@ uncompiled_graph.add_edge("action", "agent")
 
 simple_agent_graph = uncompiled_graph.compile()
 
+# Input/Output Formatting
 def convert_inputs(input_object):
-  return {"messages" : [HumanMessage(content=input_object["question"])]}
+    """Convert user input to the expected format"""
+    return {"messages": [HumanMessage(content=input_object["question"])]}
 
 def parse_output(input_state):
-  return input_state["messages"][-1].content
+    """Extract the final response from the agent state"""
+    return input_state["messages"][-1].content
 
 agent_chain_with_formatting = convert_inputs | simple_agent_graph | parse_output
