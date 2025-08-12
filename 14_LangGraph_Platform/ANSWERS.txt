@@ -1,0 +1,20 @@
+❓ Question:
+What is the purpose of the chunk_overlap parameter when using RecursiveCharacterTextSplitter to prepare documents for RAG, and what trade-offs arise as you increase or decrease its value?
+
+    a. The purpose of the chunk_overlap parameter when we use RecursiveCharacterTextSplitter is to share some text between the ends of chunks with the chunks next to them. When you increase the overlap, you increase
+     the likelihood that important information at the ends of chunks will be captured in at least one chunk, which improves context recall. However, a higher chunk overlap means that there will be more chunks overall,
+     increasing the amount of chunks that need to be stored. In the same logic, decreasing chunk overlap reduces redundancy and makes for less storage, but information at the ends of the chunks (which could be important 
+     context) might be missed. 
+
+❓ Question:
+Your retriever is configured with search_kwargs={"k": 5}. How would adjusting k likely affect RAGAS metrics such as Context Precision and Context Recall in practice, and why?
+
+    a. Increasing the k value would likely improve context recall since there is a higher chance of relevant documents being retrieved. But, this could also lead to a decrease in context precision because you are including
+    more potentially irrelevant documents in the retrieved set. Decreasing the k value improves context precision by focusing on only the most relevant documents but risks missing important context that could be retrieved with
+    a larger k value. 
+
+❓ Question:
+Compare the agent and agent_helpful assistants defined in langgraph.json. Where does the helpfulness evaluator fit in the graph, and under what condition should execution route back to the agent vs. terminate?
+    a. Once the LLM in the agent node feels it can answer the query and end the flow, information first flows to the helpfulness node, where the output is evaluated for helpfulness. If the node affirms that the
+    output is indeed helpful, the flow is ended. If not, then it goes back to the agent node where the LLM will improve the prompt either by itself or with the help of the action node. 
+    
