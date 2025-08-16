@@ -1,0 +1,11 @@
+❓ Question #1:
+What are the core components of an AgentCard?
+
+A. The core components of an AgentCard are its basic info (name, description, url, version), input/output modes (e.g. what content types it accepts), and agent skills (essentially
+the specific tools it has). 
+
+❓ Question #2:
+Why is A2A (and other such protocols) important in your own words?
+
+A. A2A is important because it allows different AI agents talk to each other and work together, similar to how APIs let different apps "communicate." This means we can build specialized
+AI agents who can then collaborate without involving humans in the loop, leading to more streamlined and efficient processes. 
